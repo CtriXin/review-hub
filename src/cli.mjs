@@ -104,14 +104,18 @@ Commands:
   aggregate           Summarize reviewer slot completion and verdict snippets
   install-commands    Install /review-hub command files and skill links locally
   recommend           Recommend phase/read_policy defaults from task text
+
+Default behavior writes real artifacts.
+Add --dry-run when you explicitly want preview/no-write behavior.
 `);
 }
 
 function handleInit(argv) {
   const args = parseArgs(argv, {
     string: ["root", "artifact-mode", "artifact-root"],
-    boolean: ["write"]
+    boolean: ["write", "dry-run", "dryrun"]
   });
+  const write = shouldWrite(args);
   const root = resolvePath(args.root || process.cwd());
   const reviewRoot = defaultReviewRoot({
     root,
@@ -124,7 +128,7 @@ function handleInit(argv) {
     review_root: reviewRoot,
     created_at: nowIso()
   };
-  if (args.write) {
+  if (write) {
     ensureDir(reviewRoot);
     writeJson(path.join(reviewRoot, "config.json"), config);
     writeText(
@@ -132,7 +136,7 @@ function handleInit(argv) {
       `# Review Hub\n\n- root: \`${root}\`\n- review_root: \`${reviewRoot}\`\n- created_at: \`${config.created_at}\`\n`
     );
   }
-  printJson({ ok: true, root, review_root: reviewRoot, wrote: Boolean(args.write) });
+  printJson({ ok: true, root, review_root: reviewRoot, wrote: write });
 }
 
 function handleRequest(argv) {
@@ -160,8 +164,9 @@ function handleRequest(argv) {
       "instruction",
       "model"
     ],
-    boolean: ["write"]
+    boolean: ["write", "dry-run", "dryrun"]
   });
+  const write = shouldWrite(args);
 
   const phase = requirePhase(args.phase);
   const readPolicy = args["read-policy"] || READ_POLICY_BY_PHASE[phase];
@@ -203,8 +208,8 @@ function handleRequest(argv) {
     requested_models: [],
     reviewer_entry_template: "/review-hub <request-root>",
     short_invocation: `/review-hub ${requestRoot}`,
-    cli_short_invocation: `review-hub reviewer ${shellQuote(requestRoot)} --write`,
-    cli_slot_invocation: `review-hub slot --request ${shellQuote(requestRoot)} --model <MODEL_NAME> --write`,
+    cli_short_invocation: `review-hub reviewer ${shellQuote(requestRoot)} --model '<MODEL_NAME>'`,
+    cli_slot_invocation: `review-hub slot --request ${shellQuote(requestRoot)} --model <MODEL_NAME>`,
     short_fallback_prompt: buildReviewerShortPrompt(requestRoot)
   };
 
@@ -213,14 +218,14 @@ function handleRequest(argv) {
     ensureRequestedModel(request, model);
   }
 
-  if (args.write) {
+  if (write) {
     persistRequestFiles({ requestRoot, request });
   }
 
   const slots = [];
   if (models.length) {
     for (const model of models) {
-      if (args.write) {
+      if (write) {
         slots.push(createReviewerSlot({ requestRoot, request, model }));
       } else {
         slots.push(previewReviewerSlot({ requestRoot, request, model }));
@@ -228,7 +233,7 @@ function handleRequest(argv) {
     }
   }
 
-  if (args.write) {
+  if (write) {
     persistRequestFiles({ requestRoot, request });
   }
 
@@ -251,8 +256,9 @@ function handleRequest(argv) {
 function handleSlot(argv) {
   const args = parseArgs(argv, {
     string: ["request", "model"],
-    boolean: ["write"]
+    boolean: ["write", "dry-run", "dryrun"]
   });
+  const write = shouldWrite(args);
   const requestRoot = resolvePath(requiredArg(args.request, "--request is required"));
   const request = readJson(path.join(requestRoot, "request.json"));
   const model = args.model || resolveModelNameFromEnv();
@@ -261,11 +267,11 @@ function handleSlot(argv) {
   }
 
   ensureRequestedModel(request, model);
-  const slot = args.write
+  const slot = write
     ? createReviewerSlot({ requestRoot, request, model })
     : previewReviewerSlot({ requestRoot, request, model });
 
-  if (args.write) {
+  if (write) {
     persistRequestFiles({ requestRoot, request });
   }
 
@@ -281,8 +287,9 @@ function handleSlot(argv) {
 function handleReviewer(argv) {
   const args = parseArgs(argv, {
     string: ["input", "model"],
-    boolean: ["write"]
+    boolean: ["write", "dry-run", "dryrun"]
   });
+  const write = shouldWrite(args);
   const rawInput = args.input || args._[0];
   const input = requiredArg(rawInput, "reviewer requires a request root, slot root, or one of their files");
   const target = resolveReviewerTarget(input);
@@ -294,16 +301,16 @@ function handleReviewer(argv) {
       throw new Error("current reviewer model is unknown; pass --model or provide MMS model env");
     }
     ensureRequestedModel(request, model);
-    const slot = args.write
+    const slot = write
       ? createReviewerSlot({ requestRoot: target.request_root, request, model })
       : previewReviewerSlot({ requestRoot: target.request_root, request, model });
-    if (args.write) {
+    if (write) {
       persistRequestFiles({ requestRoot: target.request_root, request });
     }
     return printJson(buildReviewerResult({
       request,
       slot,
-      write: Boolean(args.write),
+      write,
       input,
       resolved_kind: target.kind
     }));
@@ -320,16 +327,16 @@ function handleReviewer(argv) {
   }
 
   ensureRequestedModel(request, model);
-  const slot = args.write
+  const slot = write
     ? createReviewerSlot({ requestRoot: target.request_root, request, model })
     : previewReviewerSlot({ requestRoot: target.request_root, request, model });
-  if (args.write) {
+  if (write) {
     persistRequestFiles({ requestRoot: target.request_root, request });
   }
   return printJson(buildReviewerResult({
     request,
     slot,
-    write: Boolean(args.write),
+    write,
     input,
     resolved_kind: target.kind
   }));
@@ -338,8 +345,9 @@ function handleReviewer(argv) {
 function handleAggregate(argv) {
   const args = parseArgs(argv, {
     string: ["request"],
-    boolean: ["write"]
+    boolean: ["write", "dry-run", "dryrun"]
   });
+  const write = shouldWrite(args);
   const requestRoot = resolvePath(requiredArg(args.request, "--request is required"));
   const request = readJson(path.join(requestRoot, "request.json"));
   const manifests = sortReviewerManifests(request, readReviewerManifests(requestRoot));
@@ -376,7 +384,7 @@ function handleAggregate(argv) {
     results
   };
   const summaryMd = buildAggregateDoc(request, aggregate);
-  if (args.write) {
+  if (write) {
     ensureDir(path.join(requestRoot, "aggregate"));
     writeJson(path.join(requestRoot, "aggregate", "aggregate.json"), aggregate);
     writeText(path.join(requestRoot, "aggregate", "aggregate.md"), summaryMd);
@@ -386,9 +394,10 @@ function handleAggregate(argv) {
 
 function handleInstallCommands(argv) {
   const args = parseArgs(argv, {
-    boolean: ["write", "include-experimental"],
+    boolean: ["write", "dry-run", "dryrun", "include-experimental"],
     string: ["repo-root"]
   });
+  const write = shouldWrite(args);
   const repoRoot = resolvePath(args["repo-root"] || path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."));
   const commandSource = path.join(repoRoot, "commands", "review-hub.md");
   const skillSource = repoRoot;
@@ -402,13 +411,13 @@ function handleInstallCommands(argv) {
   const results = [];
   for (const dir of commandDirs) {
     const destination = expandHome(path.join(dir, "review-hub.md"));
-    results.push(linkPath(commandSource, destination, args.write));
+    results.push(linkPath(commandSource, destination, write));
   }
   for (const dir of skillDirs) {
     const destination = expandHome(path.join(dir, "review-hub"));
-    results.push(linkPath(skillSource, destination, args.write));
+    results.push(linkPath(skillSource, destination, write));
   }
-  printJson({ ok: true, write: Boolean(args.write), results });
+  printJson({ ok: true, write, results });
 }
 
 function handleRecommend(argv) {
@@ -604,7 +613,7 @@ function previewReviewerSlot({ requestRoot, request, model }) {
     prompt_path: path.join(slotRoot, "PROMPT.md"),
     manifest_path: path.join(slotRoot, "manifest.json"),
     short_command: request.short_invocation,
-    cli_fallback_command: `review-hub reviewer ${shellQuote(requestRoot)} --model ${shellQuote(model)} --write`,
+    cli_fallback_command: `review-hub reviewer ${shellQuote(requestRoot)} --model ${shellQuote(model)}`,
     short_fallback_prompt: request.short_fallback_prompt
   };
 }
@@ -635,7 +644,7 @@ function buildLaunchData({ request, reviewerManifests }) {
       missing_outputs: missingOutputs,
       expected_outputs: expectedOutputs,
       short_command: request.short_invocation,
-      cli_fallback_command: `review-hub reviewer ${shellQuote(request.request_root)} --model ${shellQuote(modelName)} --write`
+      cli_fallback_command: `review-hub reviewer ${shellQuote(request.request_root)} --model ${shellQuote(modelName)}`
     };
   });
 
@@ -1014,6 +1023,14 @@ function requirePhase(value) {
     throw new Error(`phase is required and must be one of: ${PHASES.join(", ")}`);
   }
   return phase;
+}
+
+function shouldWrite(args) {
+  const dryRun = Boolean(args["dry-run"] || args.dryrun);
+  if (dryRun && args.write) {
+    throw new Error("do not pass both --write and --dry-run");
+  }
+  return !dryRun;
 }
 
 function parseArgs(argv, spec = {}) {

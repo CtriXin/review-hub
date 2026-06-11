@@ -20,7 +20,7 @@ function run(args, env = process.env) {
   return JSON.parse(res.stdout);
 }
 
-run(["init", "--root", tmp, "--write"]);
+run(["init", "--root", tmp]);
 const request = run([
   "request",
   "--root", tmp,
@@ -31,14 +31,12 @@ const request = run([
   "--focus", "source",
   "--focus", "design",
   "--model", "gpt-5",
-  "--model", "claude-sonnet-4-5",
-  "--write"
+  "--model", "claude-sonnet-4-5"
 ]);
 
 const reviewer = run([
   "reviewer",
-  request.request_root,
-  "--write"
+  request.request_root
 ], {
   ...process.env,
   MMS_SESSION_PACKET_JSON: "",
@@ -48,12 +46,20 @@ const reviewer = run([
 const slot = run([
   "slot",
   "--request", request.request_root,
-  "--model", "qwen3-7",
-  "--write"
+  "--model", "qwen3-7"
 ]);
 
 const launch = JSON.parse(fs.readFileSync(path.join(request.request_root, "launch.json"), "utf8"));
-run(["aggregate", "--request", request.request_root, "--write"]);
+run(["aggregate", "--request", request.request_root]);
+
+const dryRequest = run([
+  "request",
+  "--root", tmp,
+  "--title", "Preview only",
+  "--phase", "post",
+  "--adapter", "mixed",
+  "--dry-run"
+]);
 
 if (!fs.existsSync(path.join(slot.slot_root, "PROMPT.md"))) {
   throw new Error("slot prompt missing");
@@ -66,6 +72,9 @@ if (reviewer.slot_root !== path.join(request.request_root, "reviewers", "claude-
 }
 if (!Array.isArray(launch.slots) || launch.slots.length !== 3) {
   throw new Error("launch manifest did not record the expected reviewer slots");
+}
+if (fs.existsSync(dryRequest.request_root)) {
+  throw new Error("dry-run request unexpectedly wrote files");
 }
 console.log(JSON.stringify({
   ok: true,

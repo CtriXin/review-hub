@@ -6,6 +6,14 @@
   "bin": {
     "review-hub": "./bin/review-hub.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CtriXin/review-hub.git"
+  },
+  "homepage": "https://github.com/CtriXin/review-hub#readme",
+  "bugs": {
+    "url": "https://github.com/CtriXin/review-hub/issues"
+  },
   "files": [
     "bin",
     "src",

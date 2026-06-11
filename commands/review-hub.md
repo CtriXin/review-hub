@@ -18,7 +18,7 @@ Use reviewer mode when the user already has a prepared request and wants to laun
 
 Steps:
 
-1. Run `review-hub reviewer <path> --write`.
+1. Run `review-hub reviewer <path>`.
 2. Let the CLI resolve the current model from MMS env when possible.
 3. Reuse the current model slot if it already exists; otherwise create it.
 4. Read the returned `prompt_path` and `launch_path` from disk instead of asking the user to restate the task.
@@ -30,6 +30,7 @@ Rules:
 - Do not ask the user to paste the long reviewer prompt.
 - Do not create a brand new request when the input already points at a request root.
 - Prefer the `LAUNCH.md` ordering when multiple models are involved.
+- `review-hub` defaults to real writes; only use `--dry-run` when the user explicitly wants preview/no-write behavior.
 - If the runner does not support the `/review-hub` command surface, use the short fallback prompt from `LAUNCH.md` instead of pasting `PROMPT.md`.
 
 ## Authoring mode
@@ -44,5 +45,13 @@ Behavior:
 3. Prefer the local `review-hub` CLI if available.
 4. Generate durable artifacts: `request.json`, `REQUEST.md`, `PROMPT.template.md`, `LAUNCH.md`, `launch.json`, and model-specific slot folders.
 5. Reviewer prompts must start with environment preflight so missing MCP/tool/auth/path issues are caught before deeper work.
+
+User-facing output contract:
+
+- absorb the raw `review-hub request ...` creation command yourself; do not dump it to the user unless explicitly asked
+- after authoring, return only:
+  - primary short command: `/review-hub <request-root>`
+  - optional manual-model fallback: `review-hub reviewer '<request-root>' --model '<MODEL_NAME>'`
+- if the user is likely in `MMS/mmf`, lead with the short command and keep the fallback as an optional second line
 
 Canonical runtime: repository `review-hub`, `SKILL.md`, and `review-hub` CLI.

@@ -41,7 +41,7 @@ If the user already has a request root or reviewer slot root, prefer reviewer mo
 Run:
 
 ```bash
-review-hub reviewer <request-or-slot-path> --write
+review-hub reviewer <request-or-slot-path>
 ```
 
 Reviewer mode exists so the user can manually open different MMS runner/model sessions and start each reviewer with only a short path-based command.
@@ -58,15 +58,24 @@ Contract:
 
 If the user is describing a new review task, create a request root and optionally planned reviewer slots.
 
+Dispatcher rule:
+
+- ask only the minimal clarification needed, usually 1 short question when `phase` is unclear
+- execute `review-hub request ...` yourself; do not dump the raw creation command back to the user unless they explicitly ask
+- default user-facing output should be only:
+  1. primary short command: `/review-hub <request-root>`
+  2. optional manual-model fallback: `review-hub reviewer '<request-root>' --model '<MODEL_NAME>'`
+- if the user is in `MMS/mmf`, lead with the short command only; include the fallback as an optional second line the user may copy manually
+
 ## Core commands
 
 ```bash
-review-hub init --root . --write
-review-hub request --root . --title "<title>" --summary "<summary>" --phase pre --adapter figma --focus source --focus design --write
-review-hub reviewer ./.review-hub/requests/<request-id> --write
-review-hub slot --request ./.review-hub/requests/<request-id> --model <model-name> --write
-review-hub aggregate --request ./.review-hub/requests/<request-id> --write
-review-hub install-commands --write
+review-hub init --root .
+review-hub request --root . --title "<title>" --summary "<summary>" --phase pre --adapter figma --focus source --focus design
+review-hub reviewer ./.review-hub/requests/<request-id>
+review-hub slot --request ./.review-hub/requests/<request-id> --model <model-name>
+review-hub aggregate --request ./.review-hub/requests/<request-id>
+review-hub install-commands
 ```
 
 ## Defaults
@@ -115,6 +124,8 @@ reviewers/<model-slug>/raw/
 ```
 
 If the current session exposes MMS model identity, `review-hub reviewer` and `review-hub slot` may omit `--model` and resolve it from `MMS_SESSION_PACKET_JSON` or `MMS_MODEL_NAME`.
+
+Default behavior writes artifacts immediately. Only add `--dry-run` when you explicitly want preview/no-write behavior.
 
 ## Environment preflight rule
 

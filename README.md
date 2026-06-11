@@ -28,6 +28,21 @@ Direct from a clone without linking:
 node ./bin/review-hub.js --help
 ```
 
+Direct from GitHub with `npx`:
+
+```bash
+npx --yes github:CtriXin/review-hub --help
+```
+
+Or install globally from GitHub:
+
+```bash
+npm install -g github:CtriXin/review-hub
+review-hub --help
+```
+
+Default behavior writes real artifacts. Use `--dry-run` only when you explicitly want preview/no-write behavior.
+
 ## Runner-first workflow
 
 Review Hub now supports two distinct flows:
@@ -37,12 +52,20 @@ Review Hub now supports two distinct flows:
 
 The reviewer-mode path is the main handoff surface when you want to manually start different MMS runners without copying a long prompt.
 
+Dispatcher-facing rule:
+
+- the dispatcher should create the request internally
+- the user-facing output should normally be only:
+  - `/review-hub <request-root>`
+  - optional fallback: `review-hub reviewer '<request-root>' --model '<MODEL_NAME>'`
+- when the reviewer is already running under `MMS/mmf`, prefer the short slash-command only
+
 ## Quick start
 
 ### Authoring mode
 
 ```bash
-review-hub init --root . --write
+review-hub init --root .
 review-hub request \
   --root . \
   --title "Second opinion on Figma audit" \
@@ -53,7 +76,6 @@ review-hub request \
   --focus design \
   --model gpt-5 \
   --model claude-sonnet-4-5 \
-  --write
 ```
 
 This writes:
@@ -70,7 +92,7 @@ This writes:
 In a fresh runner/model session, use the request root directly:
 
 ```bash
-review-hub reviewer ./.review-hub/requests/<request-id> --write
+review-hub reviewer ./.review-hub/requests/<request-id>
 ```
 
 Or, if the runner has the installed slash-command surface, use the shorter entry:
@@ -98,6 +120,15 @@ If the runner does not support `/review-hub`, `LAUNCH.md` also includes a short 
 - `install-commands`: install `/review-hub` command files and skill symlinks for supported local runners
 - `recommend`: recommend `phase` and `read_policy`
 
+## Dry run
+
+Add `--dry-run` when you want preview-only behavior without writing files:
+
+```bash
+review-hub request --root . --title "Preview only" --phase post --adapter mixed --dry-run
+review-hub reviewer ./.review-hub/requests/<request-id> --dry-run
+```
+
 ## Mission Control compatibility
 
 Use:
@@ -111,7 +142,6 @@ review-hub request \
   --adapter live-site \
   --focus acceptance \
   --focus regression \
-  --write
 ```
 
 This places the request under the Mission Control artifact tree instead of `./.review-hub/`.
