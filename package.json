@@ -1,0 +1,29 @@
+{
+  "name": "review-hub",
+  "version": "0.1.0",
+  "description": "Phase-based review orchestration for multi-model review requests, reviewer prompts, and aggregate outputs.",
+  "type": "module",
+  "bin": {
+    "review-hub": "./bin/review-hub.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "commands",
+    "scripts",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "smoke": "node ./scripts/smoke.mjs"
+  },
+  "keywords": [
+    "review",
+    "multi-review",
+    "prompt",
+    "workflow",
+    "mms"
+  ],
+  "license": "MIT"
+}
