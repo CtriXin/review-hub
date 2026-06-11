@@ -28,7 +28,18 @@ Direct from a clone without linking:
 node ./bin/review-hub.js --help
 ```
 
+## Runner-first workflow
+
+Review Hub now supports two distinct flows:
+
+1. **authoring mode**: create a new request root
+2. **reviewer mode**: open an existing request root or reviewer slot from a fresh runner/model session
+
+The reviewer-mode path is the main handoff surface when you want to manually start different MMS runners without copying a long prompt.
+
 ## Quick start
+
+### Authoring mode
 
 ```bash
 review-hub init --root . --write
@@ -40,16 +51,49 @@ review-hub request \
   --adapter figma \
   --focus source \
   --focus design \
+  --model gpt-5 \
+  --model claude-sonnet-4-5 \
   --write
-review-hub slot --request ./.review-hub/requests/<request-id> --model qwen3-7 --write
-review-hub aggregate --request ./.review-hub/requests/<request-id> --write
 ```
+
+This writes:
+
+- `request.json`
+- `REQUEST.md`
+- `PROMPT.template.md`
+- `LAUNCH.md`
+- `launch.json`
+- `reviewers/<model-slug>/...`
+
+### Reviewer mode
+
+In a fresh runner/model session, use the request root directly:
+
+```bash
+review-hub reviewer ./.review-hub/requests/<request-id> --write
+```
+
+Or, if the runner has the installed slash-command surface, use the shorter entry:
+
+```text
+/review-hub ./.review-hub/requests/<request-id>
+```
+
+Behavior:
+
+- resolve the current model from MMS env when possible
+- hydrate or reuse the current model slot
+- point the reviewer at the on-disk `PROMPT.md` / `manifest.json`
+- preserve output order via `LAUNCH.md` and `launch.json`
+
+If the runner does not support `/review-hub`, `LAUNCH.md` also includes a short fallback prompt so you still do not need to paste the full prompt template.
 
 ## Commands
 
 - `init`: initialize a local review-hub root
 - `request`: create a durable review request root and optional reviewer slots
 - `slot`: create a model-specific reviewer slot from an existing request
+- `reviewer`: resolve a request root or slot root into the current model reviewer slot
 - `aggregate`: summarize reviewer completion and verdict snippets
 - `install-commands`: install `/review-hub` command files and skill symlinks for supported local runners
 - `recommend`: recommend `phase` and `read_policy`
@@ -86,4 +130,4 @@ Auto-install is currently wired for command/skill locations that have stable evi
 - `~/.config/opencode`
 - `~/.opencode`
 
-`mimocode` is treated as experimental for now. `pi` and `agy` can still use exported prompt files even when automatic slash-command installation is not guaranteed.
+`mimocode` is treated as experimental for now. `pi` and `agy` can still use request-root reviewer mode through `LAUNCH.md` even when automatic slash-command installation is not guaranteed.
