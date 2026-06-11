@@ -63,6 +63,42 @@ node ./bin/review-hub.js --help
 ```
 
 Default behavior writes real artifacts. Use `--dry-run` only when you explicitly want preview/no-write behavior.
+Interactive `init` / `install-commands` print short human summaries by default; add `--json` when you explicitly want machine-readable output.
+
+## Init
+
+`review-hub init` now has two behaviors:
+
+1. bare `review-hub init`
+   - onboarding/bootstrap mode
+   - auto-detect local runner surfaces
+   - opens a Space-select picker for installable runners
+   - hides already-installed runners from the picker and summarizes them separately
+   - installs `/review-hub` command files plus skill links for the selected runners
+   - for Codex, also installs a custom prompt alias at `~/.codex/prompts/review-hub.md`
+   - interactive TTY output is concise text, not a raw JSON blob
+2. `review-hub init --root <path>`
+   - legacy/project mode
+   - initializes a local `.review-hub/` root for that workspace
+
+Example bootstrap flow:
+
+```bash
+review-hub init
+```
+
+After Codex install, use one of these:
+
+```text
+/prompts:review-hub <request-root>
+$review-hub
+```
+
+Example project-local init:
+
+```bash
+review-hub init --root .
+```
 
 ## Runner-first workflow
 
@@ -134,9 +170,11 @@ If the runner does not support `/review-hub`, `LAUNCH.md` also includes a short 
 ## Commands
 
 - `init`: initialize a local review-hub root
+- `init` without `--root`: interactive runner bootstrap
 - `request`: create a durable review request root and optional reviewer slots
 - `slot`: create a model-specific reviewer slot from an existing request
 - `reviewer`: resolve a request root or slot root into the current model reviewer slot
+- `worker-plan`: create a per-model toolful worker launch plan for hosts such as MMS/OpenCode
 - `aggregate`: summarize reviewer completion and verdict snippets
 - `install-commands`: install `/review-hub` command files and skill symlinks for supported local runners
 - `recommend`: recommend `phase` and `read_policy`
@@ -167,6 +205,26 @@ review-hub request \
 
 This places the request under the Mission Control artifact tree instead of `./.review-hub/`.
 
+## Toolful worker host
+
+When the original dispatcher is not the execution host, generate a worker plan after model selection:
+
+```bash
+review-hub worker-plan \
+  --request ./.review-hub/requests/<request-id> \
+  --runner opencode \
+  --model qwen3.7-max \
+  --model kimi-k2.6 \
+  --parallel 2
+```
+
+This writes:
+
+- `runner/opencode-worker-plan.json`
+- `runner/opencode-worker-plan.md`
+
+The plan gives MMS/OpenCode a stable contract: every worker receives the same request root, model identity is supplied through `REVIEW_HUB_MODEL` / `MULTI_REVIEW_REVIEWER`, and the worker hydrates its own slot before reading `PROMPT.md`. MCP and skills are not assumed globally; the runner host must inject them into the worker session.
+
 ## Environment preflight
 
 Generated reviewer prompts always start with environment preflight. Reviewers must verify required tools, auth/capability, and required paths before deeper work.
@@ -182,3 +240,5 @@ Auto-install is currently wired for command/skill locations that have stable evi
 - `~/.opencode`
 
 `mimocode` is treated as experimental for now. `pi` and `agy` can still use request-root reviewer mode through `LAUNCH.md` even when automatic slash-command installation is not guaranteed.
+
+Interactive bootstrap only shows detected installable runners by default. `agy` and `pi` are reported as manual-only when they are detected, because Review Hub can still hand them the short path-based reviewer command even though automatic slash-command installation is not yet guaranteed.

@@ -33,6 +33,17 @@ Rules:
 - `review-hub` defaults to real writes; only use `--dry-run` when the user explicitly wants preview/no-write behavior.
 - If the runner does not support the `/review-hub` command surface, use the short fallback prompt from `LAUNCH.md` instead of pasting `PROMPT.md`.
 
+## Toolful worker host mode
+
+Use this when an execution host such as MMS/OpenCode asks the user to choose reviewer models after the dispatcher already created a request.
+
+Steps:
+
+1. The host runs `review-hub worker-plan --request <request-root> --runner opencode --model <MODEL>...`.
+2. Each worker receives the same request-root command and a distinct model env (`REVIEW_HUB_MODEL` / `MULTI_REVIEW_REVIEWER`).
+3. Each worker runs `review-hub reviewer <request-root>`, reads its own `PROMPT.md`, and writes only inside its assigned slot.
+4. MCP/skills must come from the host runner's session-local config; do not assume the original dispatcher session has transferred them.
+
 ## Authoring mode
 
 Use authoring mode when the user is asking you to prepare a new review request.
@@ -53,5 +64,19 @@ User-facing output contract:
   - primary short command: `/review-hub <request-root>`
   - optional manual-model fallback: `review-hub reviewer '<request-root>' --model '<MODEL_NAME>'`
 - if the user is likely in `MMS/mmf`, lead with the short command and keep the fallback as an optional second line
+- on official Codex surfaces, prefer `/prompts:review-hub <request-root>` or `$review-hub` because Codex prompt/skill entrypoints differ from Claude-style bare slash commands
 
 Canonical runtime: repository `review-hub`, `SKILL.md`, and `review-hub` CLI.
+
+## `review-hub init`
+
+Interpret `review-hub init` like this:
+
+1. bare `review-hub init`
+   - onboarding/bootstrap mode
+   - detect installed runner surfaces on the machine
+   - show a Space-select installer for supported runners
+   - interactive TTY output should stay concise and human-readable; use `--json` only when machine-readable output is needed
+2. `review-hub init --root <path>`
+   - local project mode
+   - initialize `.review-hub/` under that root

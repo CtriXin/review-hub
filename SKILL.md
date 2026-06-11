@@ -66,14 +66,17 @@ Dispatcher rule:
   1. primary short command: `/review-hub <request-root>`
   2. optional manual-model fallback: `review-hub reviewer '<request-root>' --model '<MODEL_NAME>'`
 - if the user is in `MMS/mmf`, lead with the short command only; include the fallback as an optional second line the user may copy manually
+- for Codex, the installed official entrypoints are `/prompts:review-hub` and `$review-hub`; do not promise bare `/review-hub` there unless the host runner has its own custom command bridge
 
 ## Core commands
 
 ```bash
+review-hub init
 review-hub init --root .
 review-hub request --root . --title "<title>" --summary "<summary>" --phase pre --adapter figma --focus source --focus design
 review-hub reviewer ./.review-hub/requests/<request-id>
 review-hub slot --request ./.review-hub/requests/<request-id> --model <model-name>
+review-hub worker-plan --request ./.review-hub/requests/<request-id> --runner opencode --model <model-name>
 review-hub aggregate --request ./.review-hub/requests/<request-id>
 review-hub install-commands
 ```
@@ -126,6 +129,26 @@ reviewers/<model-slug>/raw/
 If the current session exposes MMS model identity, `review-hub reviewer` and `review-hub slot` may omit `--model` and resolve it from `MMS_SESSION_PACKET_JSON` or `MMS_MODEL_NAME`.
 
 Default behavior writes artifacts immediately. Only add `--dry-run` when you explicitly want preview/no-write behavior.
+Interactive `init` / `install-commands` default to short human-readable summaries; add `--json` only when machine-readable output is required.
+
+## Init behavior
+
+- bare `review-hub init` = onboarding/bootstrap mode
+  - detect local runner surfaces
+  - Space-select which runners should receive `/review-hub` command + skill installation
+- `review-hub init --root <path>` = local project review-root initialization
+
+## Toolful worker plan
+
+Use `review-hub worker-plan` when MMS/OpenCode should act as a review host instead of the original dispatcher.
+
+Contract:
+
+- the host may ask the user to Space-select models
+- each selected model gets the same request-root command
+- each worker gets model identity through `REVIEW_HUB_MODEL` / `MULTI_REVIEW_REVIEWER`
+- each worker hydrates or reuses its own slot, reads `PROMPT.md`, runs preflight, then writes only inside that slot
+- MCP/skills are runner responsibilities; the worker prompt assumes they exist only if the host injected them into that runner session
 
 ## Environment preflight rule
 
