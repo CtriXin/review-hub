@@ -21,7 +21,7 @@ Registry package name:
 @ctrixin/review-hub
 ```
 
-After npm publish, install with:
+Recommended install:
 
 ```bash
 npx @ctrixin/review-hub --help
@@ -31,6 +31,21 @@ Or:
 
 ```bash
 npm install -g @ctrixin/review-hub
+review-hub --help
+```
+
+This is the primary public install path.
+
+If you want the latest GitHub state before the next npm release, use the GitHub fallback:
+
+```bash
+npx --yes github:CtriXin/review-hub --help
+```
+
+Or:
+
+```bash
+npm install -g github:CtriXin/review-hub
 review-hub --help
 ```
 
@@ -46,21 +61,6 @@ Direct from a clone without linking:
 ```bash
 node ./bin/review-hub.js --help
 ```
-
-Direct from GitHub with `npx`:
-
-```bash
-npx --yes github:CtriXin/review-hub --help
-```
-
-Or install globally from GitHub:
-
-```bash
-npm install -g github:CtriXin/review-hub
-review-hub --help
-```
-
-If the npm package has not been published yet, use the GitHub commands above.
 
 Default behavior writes real artifacts. Use `--dry-run` only when you explicitly want preview/no-write behavior.
 
