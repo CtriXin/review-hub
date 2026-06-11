@@ -671,7 +671,7 @@ function buildLaunchDoc(request, launch) {
     ``,
     `## Preferred flow`,
     `1. Open the target runner/model session manually.`,
-    `2. \`cd ${request.root}\``,
+    `2. \`cd ${shellQuote(request.root)}\``,
     `3. Run \`${launch.reviewer_entry_command}\`.`,
     `4. The reviewer resolves the current model from MMS env, hydrates or reuses the matching slot, runs preflight first, and writes only inside that slot.`,
     ``,
