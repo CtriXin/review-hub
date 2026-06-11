@@ -1,5 +1,5 @@
 {
-  "name": "review-hub",
+  "name": "@ctrixin/review-hub",
   "version": "0.1.0",
   "description": "Phase-based review orchestration for multi-model review requests, reviewer prompts, and aggregate outputs.",
   "type": "module",
@@ -13,6 +13,9 @@
   "homepage": "https://github.com/CtriXin/review-hub#readme",
   "bugs": {
     "url": "https://github.com/CtriXin/review-hub/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "bin",

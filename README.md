@@ -15,6 +15,25 @@ Most review systems become too vertical (`figma review`, `qa review`, `design re
 
 ## Install
 
+Registry package name:
+
+```text
+@ctrixin/review-hub
+```
+
+After npm publish, install with:
+
+```bash
+npx @ctrixin/review-hub --help
+```
+
+Or:
+
+```bash
+npm install -g @ctrixin/review-hub
+review-hub --help
+```
+
 Local clone:
 
 ```bash
@@ -40,6 +59,8 @@ Or install globally from GitHub:
 npm install -g github:CtriXin/review-hub
 review-hub --help
 ```
+
+If the npm package has not been published yet, use the GitHub commands above.
 
 Default behavior writes real artifacts. Use `--dry-run` only when you explicitly want preview/no-write behavior.
 
