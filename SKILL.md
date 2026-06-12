@@ -7,6 +7,15 @@ description: "Phase-based review orchestration for independent pre/mid/post revi
 
 Use Review Hub when the user wants independent review or model fanout without hard-coding the review lane to one domain like Figma, QA, or production.
 
+## Local overlays
+
+After reading this public skill, check for private overlay instructions before acting:
+
+- `<this-skill-dir>/.agent.local/overlays/*/SKILL.md`
+- `<current-repo>/.agent.local/review-hub-overlay/SKILL.md`
+
+Read every matching overlay file completely. Overlays are local/private and may add runner-specific launch helpers, but the public Review Hub contract must still work without them.
+
 Review Hub is deliberately flat:
 
 - `phase` decides **when** the review happens:
