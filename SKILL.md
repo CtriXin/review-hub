@@ -41,6 +41,10 @@ Review Hub is deliberately flat:
 
 Do not create separate top-level skills for every adapter. Figma, screenshots, docs, and live sites are inputs, not taxonomy roots.
 
+## vs `qa`（边界，2026-07-01 架构审查定）
+
+review-hub 和 `qa` 都做「多子 agent 并行 review」，靠**输出形态**分流:**只要 LLM 写报告/challenge 给人或下一个 session 看 → review-hub;要产机器合同 `check-spec.json`(下游 atomic-gate 消费,进 done-gate 链路)→ `qa`。** 不要为同一个 pre-phase review 需求同时起两边。
+
 ## Two modes
 
 ### Reviewer mode first
