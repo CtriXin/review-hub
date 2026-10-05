@@ -296,14 +296,27 @@ function handleRequest(argv) {
   const focus = ensureList(args.focus, [defaultFocusForPhase(phase)]);
   const title = args.title || "review-hub-request";
   const summary = args.summary || "";
-  const requestId = args["request-id"] || `${dateStamp()}-${slugify(title)}`;
-  const requestRoot = args["out-dir"]
+  const explicitTarget = Boolean(args["request-id"] || args["out-dir"]);
+  const requestsRoot = path.join(defaultReviewRoot({
+    root,
+    artifactMode: args["artifact-mode"] || "standalone",
+    artifactRoot: args["artifact-root"]
+  }), "requests");
+  let requestId = args["request-id"] || `${dateStamp()}-${slugifyTitle(title)}`;
+  let requestRoot = args["out-dir"]
     ? resolvePath(args["out-dir"])
-    : path.join(defaultReviewRoot({
-        root,
-        artifactMode: args["artifact-mode"] || "standalone",
-        artifactRoot: args["artifact-root"]
-      }), "requests", requestId);
+    : path.join(requestsRoot, requestId);
+  if (fs.existsSync(path.join(requestRoot, "request.json"))) {
+    if (explicitTarget) {
+      throw new Error(`request root already exists: ${requestRoot}; use slot/reviewer/worker-plan to extend it, or pick a new --request-id/--out-dir`);
+    }
+    // Auto-derived ids must never clobber an existing request (and inherit its reviewer slots).
+    const baseId = requestId;
+    for (let n = 2; fs.existsSync(path.join(requestRoot, "request.json")); n += 1) {
+      requestId = `${baseId}-${n}`;
+      requestRoot = path.join(requestsRoot, requestId);
+    }
+  }
 
   const request = {
     schema: "review_hub.request.v1",
@@ -2206,6 +2219,18 @@ function slugify(value) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "unknown";
+}
+
+// Request ids are directory names derived from free-form titles; keep non-ASCII
+// letters (e.g. Chinese titles) so distinct titles do not all collapse to "unknown".
+function slugifyTitle(value) {
+  const slug = String(value)
+    .normalize("NFKC")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+  return Array.from(slug).slice(0, 64).join("").replace(/-+$/g, "") || "unknown";
 }
 
 function nowIso() {

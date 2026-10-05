@@ -1,6 +1,6 @@
 {
   "name": "@ctrixin/review-hub",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Phase-based review orchestration for multi-model review requests, reviewer prompts, and aggregate outputs.",
   "type": "module",
   "bin": {

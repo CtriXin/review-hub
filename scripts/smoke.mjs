@@ -101,6 +101,24 @@ const dryRequest = run([
   "--dry-run"
 ]);
 
+const zhPre = run(["request", "--root", tmp, "--title", "设计稿复核", "--phase", "pre", "--model", "gpt-5"]);
+const zhPost = run(["request", "--root", tmp, "--title", "上线验收", "--phase", "post", "--model", "claude"]);
+const zhPreAgain = run(["request", "--root", tmp, "--title", "设计稿复核", "--phase", "mid"]);
+if (zhPre.request_root === zhPost.request_root) {
+  throw new Error("distinct non-ASCII titles collapsed into one request root");
+}
+if (zhPreAgain.request_root !== `${zhPre.request_root}-2`) {
+  throw new Error("auto-derived request id collision was not suffixed");
+}
+const zhPreStored = JSON.parse(fs.readFileSync(path.join(zhPre.request_root, "request.json"), "utf8"));
+if (zhPreStored.phase !== "pre" || zhPreStored.title !== "设计稿复核") {
+  throw new Error("existing request was clobbered by a later request");
+}
+const clash = spawnSync(process.execPath, [cli, "request", "--root", tmp, "--title", "x", "--phase", "pre", "--request-id", path.basename(zhPost.request_root)], { cwd: tmp, encoding: "utf8" });
+if (clash.status === 0) {
+  throw new Error("explicit --request-id overwrote an existing request");
+}
+
 if (!fs.existsSync(path.join(slot.slot_root, "PROMPT.md"))) {
   throw new Error("slot prompt missing");
 }
